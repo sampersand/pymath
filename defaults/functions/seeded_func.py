@@ -25,7 +25,7 @@ class seeded_oper(seeded_func):
 	def __new__(cls, func_instance, args_to_pass_to_func):
 		args_to_pass_to_func = cls.scrub(args_to_pass_to_func)
 		identity = func_instance._is_identity(*args_to_pass_to_func)
-		if identity is not None and 0:
+		if identity is not None:
 			return identity
 		else:
 			return seeded_func.__new__(cls)
@@ -52,26 +52,14 @@ class seeded_oper(seeded_func):
 			# print(a, b)
 			power = b
 			base = a
-			print(base.deriv(du), base, sep = '|')
 			if base.deriv(du) and not power.deriv(du):
-				# power1 = power - 1
-				# comb = base ** power1
-				# comb2 = power * comb
-				# print(repr(comb2))
-				# print(repr(comb2[0]))
-				# print(comb2[0])
-				# # print(comb2 * 1 )
-				# quit()
+				return power * base.deriv(du) * base ** (power - 1)
 				return power * base ** (power - 1) * base.deriv(du)
-			# if isinstance(a, pymath_obj) and not isinstance(b, pymath_obj):
-			# if isinstance(b, pymath_obj) and not isinstance(a, pymath_obj):
-			# 	return (a ** b) * pymath.math.ln(a) * b.deriv(du)
 
 		raise ValueError('No way to take the derivative of  \'' + str(name) + '\'')
 
 	def __str__(self) -> str:
-		return self.func_instance._def_str(self._iterable)
-
+		return str(self.value) if self.known else self.func_instance._def_str(self._iterable)
 
 
 

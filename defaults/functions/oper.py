@@ -1,8 +1,9 @@
 import re, inspect
 from pymath import pymath_obj
-# from pymath.utils import known_coerce, known, coerce
+from pymath.defaults import const
 from pymath.defaults.functions import default_func
 from pymath.defaults.functions.seeded_func import seeded_oper
+oper_priorities = {}
 class oper(default_func):
 	seeded_type = seeded_oper
 	def __init__(self, name, inp_func, identity_func, is_r = False):
@@ -13,20 +14,39 @@ class oper(default_func):
 
 	def _binary_oper_str(self, a, b):
 		# assert 
-		return '{0}{1}{2}{1}{3}'.format(a, self.name in {'+', '-'} and ' ' or '', self.name, b)
+		if self.name == '*':
+			if hasattr(a, 'known') and a.known:
+				if __debug__:
+					assert not b.known #if they are both known, it should be str(value)
+				return str(a) + self._add_parens_if_lower_oper(b)
+			elif hasattr(b, 'known') and b.known:
+				if __debug__:
+					assert not a.known #if they are both known, it should be str(value)
+				return str(b) + self._add_parens_if_lower_oper(a)
+
+		return '{0}{1}{2}{1}{3}'.format(self._add_parens_if_lower_oper(a), self.name in {'+', '-'} and ' ' or '',
+		                                self.name, self._add_parens_if_lower_oper(b))
+
+	def _add_parens_if_lower_oper(self, arg):
+		if not isinstance(arg, seeded_oper):
+			return str(arg)
+		if not arg.known and oper_priorities[arg.func_instance] > oper_priorities[self]:
+			return '(' + str(arg) + ')'
+		return str(arg)
 
 	def _def_str(self, print_args):
 		if __debug__:
 			assert len(print_args) == self.req_arg_count #required.
 		if self.req_arg_count == 1:
-			return '{}{}'.format(self.name, print_args[0])
+			return '{}{}'.format(self.name, self._add_parens_if_lower_oper(print_args[0]))
 		elif self.req_arg_count == 2:
 			if self.is_r:
 				return self._binary_oper_str(print_args[1], print_args[0])
 			return self._binary_oper_str(print_args[0], print_args[1])
 		else:
 			raise ValueError('uh oh!')
-
+	def __hash__(self):
+		return hash(str(self) + str(self.inp_func))
 	# def __str__(self):
 	# 	return super().super().__str__()
 def known_coerce(arg, *values):
@@ -133,6 +153,11 @@ opers = {
 	                	0 if known_coerce(dv, 1) else None
 	               	),
 
+	'__invert__': oper('~',
+	                inp_func = lambda a: ~_coerce(a),
+	                identity_func = lambda a: None
+					),
+
 	'__neg__': oper('-',
 	                inp_func = lambda a: -_coerce(a),
 	                identity_func = lambda a: 0 if known_coerce(a, 0) else None
@@ -142,3 +167,35 @@ opers = {
 	                identity_func = lambda a: 0 if known_coerce(a, 0) else None,
 	                ),
 }
+oper_priorities.update({
+	opers['__pow__'] : 0,  opers['__rpow__'] : 0, 
+	opers['__pos__'] : 1, 
+	opers['__neg__'] : 1, 
+	opers['__invert__'] : 1, 
+	opers['__mul__'] : 2, opers['__rmul__'] : 2,
+	opers['__truediv__'] : 2, opers['__rtruediv__'] : 2,
+	opers['__mod__'] : 2, opers['__rmod__'] : 2,
+	opers['__floordiv__'] : 2, opers['__rfloordiv__'] : 2,
+	opers['__add__'] : 3, opers['__radd__'] : 3,
+	opers['__sub__'] : 3, opers['__rsub__'] : 3,
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

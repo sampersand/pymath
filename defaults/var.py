@@ -15,7 +15,7 @@ class var(pymath_obj):
 		return str(self.name)
 
 	def __repr__(self: 'var') -> str:
-		return '{}({}, {})'.format(type(self).__qualname__, self.name. self.value)
+		return '{}({}, {})'.format(type(self).__qualname__, self.name, self.value)
 
 	def __call__(self, to_mul_against):
 		return self * to_mul_against
